@@ -18,6 +18,9 @@ public class CurrencyConversionController {
     @Autowired
     private Environment environment;
 
+    @Autowired
+    CurrencyExchangeProxy proxy;
+
     @GetMapping("/currency-conversion/from/{from}/to/{to}/quantity/{quantity}")
     public CurrencyConverted retreive(@PathVariable String from, @PathVariable String to, @PathVariable BigDecimal quantity) {
 
@@ -28,6 +31,19 @@ public class CurrencyConversionController {
         ResponseEntity<CurrencyConverted> currencyConvertedResponseEntity = new RestTemplate().getForEntity("http://localhost:8000/currency-exchange/from/{from}/to/{to}",
                 CurrencyConverted.class, uriVariables);
         CurrencyConverted body = currencyConvertedResponseEntity.getBody();
+        return new CurrencyConverted(body.getId(), body.getFrom(), body.getTo(),
+                quantity, body.getConversionMultiple(), quantity.multiply(body.getConversionMultiple()),
+                body.getEnvironment());
+    }
+
+    @GetMapping("/currency-conversion-feign/from/{from}/to/{to}/quantity/{quantity}")
+    public CurrencyConverted retreiveFeign(@PathVariable String from, @PathVariable String to, @PathVariable BigDecimal quantity) {
+
+        HashMap<String, String> uriVariables = new HashMap<>();
+        uriVariables.put("from", from);
+        uriVariables.put("to", to);
+
+        CurrencyConverted body = proxy.retreiveExchangeValues(from, to);
         return new CurrencyConverted(body.getId(), body.getFrom(), body.getTo(),
                 quantity, body.getConversionMultiple(), quantity.multiply(body.getConversionMultiple()),
                 body.getEnvironment());
